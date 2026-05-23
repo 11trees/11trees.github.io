@@ -1,35 +1,61 @@
-name: CI & Auto Deploy
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    runs-on: self-hosted
-    environment: PROD
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy certificate files to workspace
-        run: |
-          mkdir -p certs
-          cp ~/.secrets/certs/fullchain.pem certs/
-          cp ~/.secrets/certs/privkey.pem certs/
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.10.0
 
-      - name: Generate .env file
-        run: echo "VITE_GA4_MEASUREMENT_ID=${{ secrets.VITE_GA4_MEASUREMENT_ID }}" >> .env
-          
-      - name: Build Docker image
-        run: docker compose build
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
 
-      - name: Stop and remove any existing containers
-        run: docker compose down --remove-orphans
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
 
-      - name: Run latest container
-        run: docker compose up -d --remove-orphans --force-recreate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Prune unused images
-        run: docker image prune -f
+      - name: Build
+        run: pnpm run build
+        env:
+          VITE_GA4_MEASUREMENT_ID: ${{ secrets.VITE_GA4_MEASUREMENT_ID }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
