@@ -10,17 +10,20 @@ interface SearchApiDrive {
   capacity: string;
   technology: string;
   series?: string;
-  rpm?: number;
-  cache?: string;
-  interface?: string;
-  formFactor?: string;
-  workloadRating?: string;
-  warranty?: string;
-  targetUse?: string;
-  performance?: string;
-  price?: string;
-  MTBF?: string;
-  notes?: string;
+  rpm?: number | null;
+  cache?: string | null;
+  interface?: string | null;
+  interfaceVersion?: string | null;
+  formFactor?: string | null;
+  formFactorHeight?: string | null;
+  workloadRating?: string | null;
+  warranty?: string | null;
+  targetUse?: string | null;
+  grade?: string | null;
+  performance?: string | null;
+  price?: string | null;
+  MTBF?: string | null;
+  notes?: string | null;
 }
 
 interface SearchApiResponse {
@@ -52,10 +55,13 @@ const toHardDrive = (drive: SearchApiDrive, index: number): HardDrive => ({
   rpm: drive.rpm,
   cache: drive.cache,
   interface: drive.interface,
+  interfaceVersion: drive.interfaceVersion,
   formFactor: drive.formFactor,
+  formFactorHeight: drive.formFactorHeight,
   workloadRating: drive.workloadRating,
   warranty: drive.warranty,
   targetUse: drive.targetUse,
+  grade: drive.grade,
   performance: drive.performance,
   price: drive.price,
   MTBF: drive.MTBF,

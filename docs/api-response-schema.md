@@ -17,8 +17,6 @@ GET /api/search?q={query}
       "model": "ST2000DM008",
       "capacity": "2TB",
       "technology": "SMR",
-      "technologyLabel": "SMR（叠瓦磁记录）",
-      "technologyColor": "red",
       "series": "Barracuda",
       "rpm": 7200,
       "cache": "256MB",
@@ -28,7 +26,6 @@ GET /api/search?q={query}
       "formFactorHeight": "20.2mm",
       "targetUse": "桌面存储（Desktop）",
       "grade": "consumer",
-      "gradeLabel": "消费级硬盘",
       "performance": null,
       "workloadRating": null,
       "warranty": null,
@@ -56,8 +53,6 @@ GET /api/search?q={query}
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `technology` | string | 是 | 记录技术缩写：`"SMR"` / `"PMR"` / `"CMR"` / `"HAMR"` |
-| `technologyLabel` | string | 是 | 带中文说明的完整标签，如 `"SMR（叠瓦磁记录）"` |
-| `technologyColor` | string | 是 | 前端展示颜色：`"red"`（SMR）/ `"green"`（PMR/CMR）/ `"purple"`（HAMR） |
 
 ### 规格参数（6 宫格展示）
 
@@ -76,32 +71,12 @@ GET /api/search?q={query}
 |---|---|---|---|
 | `targetUse` | string \| null | 否 | 用途说明，如 `"桌面存储（Desktop）"` |
 | `grade` | string \| null | 否 | 产品定位：`"consumer"`（消费级）/ `"enterprise"`（企业级）/ `"prosumer"`（专业级） |
-| `gradeLabel` | string \| null | 否 | 定位标签文案，如 `"消费级硬盘"` / `"企业级硬盘"` |
 
 ### 备注
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `notes` | string \| null | 否 | 额外备注，如 `"2Families"` |
-
-## 前端本地逻辑
-
-以下展示逻辑由前端根据 `technology` 字段自行处理，**不需要后端返回**：
-
-### 兼容性建议
-
-| 技术类型 | NAS | RAID 重建 | ZFS / 数据库 |
-|---|---|---|---|
-| PMR / CMR | 推荐 | 推荐 | 推荐 |
-| SMR | 不推荐 | 不推荐 | 不推荐 |
-| HAMR | 不推荐 | 不推荐 | 不推荐 |
-
-### 技术类型警告
-
-| 技术类型 | 警告文案 |
-|---|---|
-| SMR | SMR 硬盘在持续写入场景下性能可能下降，不适合频繁写入或多盘位 RAID 使用。 |
-| PMR / CMR / HAMR | 无 |
 
 ### 其他可选字段
 
@@ -121,8 +96,6 @@ GET /api/search?q={query}
   "model": "WD40EZRZ",
   "capacity": "4TB",
   "technology": "PMR",
-  "technologyLabel": "PMR（垂直磁记录）",
-  "technologyColor": "green",
   "series": "Blue",
   "rpm": 5400,
   "cache": "64MB",
@@ -132,7 +105,6 @@ GET /api/search?q={query}
   "formFactorHeight": "26.1mm",
   "targetUse": "桌面存储（Desktop）",
   "grade": "consumer",
-  "gradeLabel": "消费级硬盘",
   "notes": null
 }
 ```

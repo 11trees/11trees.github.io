@@ -66,31 +66,15 @@ const getTechBadgeStyle = (tech: string): string => {
   }
 };
 
-const getInterfaceSubLabel = (iface: string): string | null => {
-  if (iface.toUpperCase().includes('SATA')) {
-    return 'SATA III';
+const getGradeLabel = (grade?: string | null): string => {
+  switch (grade) {
+    case 'enterprise':
+      return '企业级硬盘';
+    case 'prosumer':
+      return '专业级硬盘';
+    default:
+      return '消费级硬盘';
   }
-  if (iface.toUpperCase().includes('SAS')) {
-    return 'SAS';
-  }
-  if (iface.toUpperCase().includes('NVME') || iface.toUpperCase().includes('NVMe')) {
-    return 'PCIe';
-  }
-  return null;
-};
-
-const parseFormFactor = (ff: string): { main: string; sub: string | null } => {
-  const parts = ff.split(/\s+/);
-  if (parts.length >= 2) {
-    return { main: parts[0], sub: parts.slice(1).join(' ') };
-  }
-  return { main: ff, sub: null };
-};
-
-const isConsumerDrive = (series?: string): boolean => {
-  if (!series) return true;
-  const s = series.toLowerCase();
-  return s.includes('barracuda') || s.includes('desktop') || s.includes('green') || s.includes('blue');
 };
 
 const getSMRNote = (): string =>
@@ -136,9 +120,6 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
           const isSMR = drive.technology.toUpperCase() === 'SMR';
           const techLabel = getTechFullLabel(drive.technology);
           const compat = getCompatibility(drive.technology);
-          const ifaceSub = drive.interface ? getInterfaceSubLabel(drive.interface) : null;
-          const ffParsed = drive.formFactor ? parseFormFactor(drive.formFactor) : null;
-          const consumer = isConsumerDrive(drive.series);
 
           return (
             <Card
@@ -205,7 +186,9 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
                       <span className="text-sm">接口</span>
                     </div>
                     <p className="text-xl font-bold text-gray-900">{drive.interface ?? '-'}</p>
-                    {ifaceSub && <p className="text-sm text-gray-400">{ifaceSub}</p>}
+                    {drive.interfaceVersion && (
+                      <p className="text-sm text-gray-400">{drive.interfaceVersion}</p>
+                    )}
                   </div>
 
                   {/* 规格 */}
@@ -214,8 +197,10 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
                       <Maximize2 className="h-5 w-5" />
                       <span className="text-sm">规格</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{ffParsed?.main ?? '-'}</p>
-                    {ffParsed?.sub && <p className="text-sm text-gray-400">{ffParsed.sub}</p>}
+                    <p className="text-2xl font-bold text-gray-900">{drive.formFactor ?? '-'}</p>
+                    {drive.formFactorHeight && (
+                      <p className="text-sm text-gray-400">{drive.formFactorHeight}</p>
+                    )}
                   </div>
 
                   {/* 记录方式 */}
@@ -245,7 +230,7 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
                       {drive.targetUse || drive.notes || '-'}
                     </p>
                     <Badge variant="outline" className="mt-2 bg-white text-blue-600 border-blue-200">
-                      {consumer ? '消费级硬盘' : '企业级硬盘'}
+                      {getGradeLabel(drive.grade)}
                     </Badge>
                   </div>
 
@@ -289,7 +274,9 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
 
                 {/* Footer */}
                 <div className="flex justify-between items-center pt-3 border-t border-gray-100 text-sm text-gray-500">
-                  {drive.formFactor && <span>Form Factor: {drive.formFactor}</span>}
+                  {drive.formFactor && drive.formFactorHeight && (
+                    <span>Form Factor: {drive.formFactor} {drive.formFactorHeight}</span>
+                  )}
                   {drive.notes && !drive.targetUse && <span>{drive.notes}</span>}
                 </div>
               </div>
