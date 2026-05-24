@@ -151,7 +151,7 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
               )}
 
               {/* Performance & Additional Info */}
-              {(drive.performance || drive.workloadRating || drive.warranty || drive.price) && (
+              {(drive.performance || drive.workloadRating || drive.warranty || drive.price || drive.MTBF) && (
                 <div className="space-y-2 text-xs">
                   {drive.performance && (
                     <div className="flex items-center justify-between">
@@ -169,6 +169,12 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Warranty:</span>
                       <span className="text-gray-800 font-medium">{drive.warranty}</span>
+                    </div>
+                  )}
+                  {drive.MTBF && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">MTBF:</span>
+                      <span className="text-gray-800 font-medium">{drive.MTBF}</span>
                     </div>
                   )}
                   {drive.price && (
