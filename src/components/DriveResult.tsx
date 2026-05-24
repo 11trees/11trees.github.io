@@ -115,7 +115,7 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
         </h3>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         {drives.map((drive, index) => {
           const isSMR = drive.technology.toUpperCase() === 'SMR';
           const techLabel = getTechFullLabel(drive.technology);
