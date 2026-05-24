@@ -2,8 +2,12 @@ import { useEffect } from 'react';
 
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
-    dataLayer: any[];
+    gtag: (
+      command: 'config' | 'event' | 'js',
+      targetId: string | Date,
+      config?: Record<string, unknown>
+    ) => void;
+    dataLayer: unknown[];
   }
 }
 
@@ -33,7 +37,7 @@ export const useAnalytics = () => {
     }
   }, []);
 
-  const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
+  const trackEvent = (eventName: string, parameters?: Record<string, unknown>) => {
     if (typeof window !== 'undefined' && window.gtag && GA4_MEASUREMENT_ID !== 'G-XXXXXXXXXX') {
       window.gtag('event', eventName, {
         event_category: 'Hard Drive Query Tool',

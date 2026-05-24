@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface SearchFormProps {
   onSearch: (query: string) => void;
@@ -14,13 +13,10 @@ interface SearchFormProps {
 export default function SearchForm({ onSearch, isLoading = false }: SearchFormProps) {
   const [query, setQuery] = useState('');
   const { t } = useLanguage();
-  const { trackSearch } = useAnalytics();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      onSearch(query);
-    }
+    onSearch(query.trim());
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,58 +25,7 @@ export default function SearchForm({ onSearch, isLoading = false }: SearchFormPr
   };
 
   const handleInputBlur = () => {
-    // Trigger search when input loses focus
-    if (query.trim()) {
-      onSearch(query);
-    } else {
-      // Clear results if query is empty
-      onSearch('');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Allow Enter key to trigger search immediately
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (query.trim()) {
-        onSearch(query);
-      }
-    }
-  };
-
-  // Enhanced onSearch function to include analytics
-  const enhancedOnSearch = (searchQuery: string) => {
-    onSearch(searchQuery);
-    
-    // Track search event if query is not empty
-    if (searchQuery.trim()) {
-      // We'll need to get results count from parent component
-      // For now, we'll track the search event
-      trackSearch(searchQuery.trim(), 0); // Results count will be updated in parent
-    }
-  };
-
-  const handleSearchWithAnalytics = () => {
-    if (query.trim()) {
-      enhancedOnSearch(query);
-    }
-  };
-
-  const handleBlurWithAnalytics = () => {
-    if (query.trim()) {
-      enhancedOnSearch(query);
-    } else {
-      onSearch('');
-    }
-  };
-
-  const handleKeyDownWithAnalytics = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (query.trim()) {
-        enhancedOnSearch(query);
-      }
-    }
+    onSearch(query.trim());
   };
 
   return (
@@ -98,8 +43,7 @@ export default function SearchForm({ onSearch, isLoading = false }: SearchFormPr
             placeholder={t('search.placeholder')}
             value={query}
             onChange={handleInputChange}
-            onBlur={handleBlurWithAnalytics}
-            onKeyDown={handleKeyDownWithAnalytics}
+            onBlur={handleInputBlur}
             className="pl-10 text-lg py-3"
             disabled={isLoading}
           />
@@ -109,7 +53,6 @@ export default function SearchForm({ onSearch, isLoading = false }: SearchFormPr
           type="submit" 
           className="w-full py-3 text-lg"
           disabled={isLoading || !query.trim()}
-          onClick={handleSearchWithAnalytics}
         >
           {isLoading ? t('search.searching') : t('search.button')}
         </Button>

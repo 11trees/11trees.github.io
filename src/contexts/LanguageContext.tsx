@@ -67,6 +67,8 @@ const translations: Record<Language, Record<string, string>> = {
     'results.found': '找到 {count} 个匹配结果',
     'results.notfound.title': '未找到匹配的硬盘',
     'results.notfound.subtitle': '请尝试搜索其他关键词，如品牌名（Western Digital, Seagate）或型号',
+    'results.error.title': '查询失败',
+    'results.error.subtitle': '暂时无法查询硬盘信息，请稍后重试。',
     
     // Technology types
     'tech.pmr': 'PMR - 垂直磁记录',
@@ -149,6 +151,8 @@ const translations: Record<Language, Record<string, string>> = {
     'results.found': 'Found {count} matching results',
     'results.notfound.title': 'No matching hard drives found',
     'results.notfound.subtitle': 'Try searching with other keywords like brand names (Western Digital, Seagate) or model numbers',
+    'results.error.title': 'Search failed',
+    'results.error.subtitle': 'Unable to search hard drive information right now. Please try again later.',
     
     // Technology types
     'tech.pmr': 'PMR - Perpendicular Recording',

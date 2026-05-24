@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HardDrive } from '@/data/type';
-import { searchHardDrives } from '@/data/harddriveDatabase';
+import { DriveSearchError, searchHardDrives } from '@/lib/driveSearchApi';
 import SearchForm from '@/components/SearchForm';
 import DriveResult from '@/components/DriveResult';
 import TechExplanation from '@/components/TechExplanation';
@@ -13,9 +13,12 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 export default function Index() {
   const [searchResults, setSearchResults] = useState<HardDrive[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const activeSearchRef = useRef<AbortController | null>(null);
+  const activeSearchQueryRef = useRef<string | null>(null);
   const { t } = useLanguage();
-  const { trackPageView, trackSearch } = useAnalytics();
+  const { trackPageView, trackSearch, trackFeedbackClick } = useAnalytics();
 
   // Track initial page view
   useEffect(() => {
@@ -23,25 +26,47 @@ export default function Index() {
   }, [trackPageView]);
 
   const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    setIsLoading(true);
-    
-    // Simulate search delay for better UX
-    setTimeout(() => {
-      const results = searchHardDrives(query);
-      setSearchResults(results);
+    const trimmedQuery = query.trim();
+    setSearchQuery(trimmedQuery);
+    setSearchError(null);
+
+    if (!trimmedQuery) {
+      activeSearchRef.current?.abort();
+      activeSearchQueryRef.current = null;
+      setSearchResults([]);
       setIsLoading(false);
-      
-      // Track search with results count
-      if (query.trim()) {
-        trackSearch(query.trim(), results.length);
+      return;
+    }
+
+    if (activeSearchQueryRef.current === trimmedQuery) {
+      return;
+    }
+
+    activeSearchRef.current?.abort();
+    const controller = new AbortController();
+    activeSearchRef.current = controller;
+    activeSearchQueryRef.current = trimmedQuery;
+    setIsLoading(true);
+
+    try {
+      const results = await searchHardDrives(trimmedQuery, controller.signal);
+      setSearchResults(results);
+      trackSearch(trimmedQuery, results.length);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setSearchResults([]);
+      setSearchError(error instanceof DriveSearchError ? error.message : t('results.error.subtitle'));
+    } finally {
+      if (activeSearchRef.current === controller) {
+        activeSearchRef.current = null;
+        activeSearchQueryRef.current = null;
+        setIsLoading(false);
       }
-    }, 300);
+    }
   };
 
   const handleFooterFeedbackClick = () => {
     // Track footer feedback click
-    const { trackFeedbackClick } = useAnalytics();
     trackFeedbackClick();
     
     const subject = encodeURIComponent(t('feedback.email.subject'));
@@ -76,7 +101,7 @@ export default function Index() {
         {/* Results Section */}
         {(searchQuery || searchResults.length > 0) && (
           <div className="mb-8">
-            <DriveResult drives={searchResults} query={searchQuery} />
+            <DriveResult drives={searchResults} query={searchQuery} error={searchError} />
           </div>
         )}
 
