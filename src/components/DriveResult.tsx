@@ -1,7 +1,20 @@
 import { HardDrive } from '@/data/type';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { HardDriveIcon, CheckCircle, AlertTriangle, Zap, Clock, Database, DollarSign } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Database,
+  Gauge,
+  Cpu,
+  Usb,
+  Maximize2,
+  Activity,
+  Monitor,
+  X,
+  HelpCircle,
+  Info,
+} from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DriveResultProps {
@@ -9,6 +22,79 @@ interface DriveResultProps {
   query: string;
   error?: string | null;
 }
+
+interface CompatItem {
+  label: string;
+  recommended: boolean;
+}
+
+const getCompatibility = (tech: string): CompatItem[] => {
+  const ok = tech.toUpperCase() === 'PMR' || tech.toUpperCase() === 'CMR';
+  return [
+    { label: 'NAS', recommended: ok },
+    { label: 'RAID 重建', recommended: ok },
+    { label: 'ZFS / 数据库', recommended: ok },
+  ];
+};
+
+const getTechFullLabel = (tech: string): string => {
+  switch (tech.toUpperCase()) {
+    case 'PMR':
+      return 'PMR（垂直磁记录）';
+    case 'CMR':
+      return 'CMR（传统磁记录）';
+    case 'SMR':
+      return 'SMR（叠瓦磁记录）';
+    case 'HAMR':
+      return 'HAMR（热辅助磁记录）';
+    default:
+      return tech;
+  }
+};
+
+const getTechBadgeStyle = (tech: string): string => {
+  switch (tech.toUpperCase()) {
+    case 'PMR':
+    case 'CMR':
+      return 'bg-green-50 text-green-700 border-green-200';
+    case 'SMR':
+      return 'bg-red-50 text-red-700 border-red-200';
+    case 'HAMR':
+      return 'bg-purple-50 text-purple-700 border-purple-200';
+    default:
+      return 'bg-gray-50 text-gray-700 border-gray-200';
+  }
+};
+
+const getInterfaceSubLabel = (iface: string): string | null => {
+  if (iface.toUpperCase().includes('SATA')) {
+    return 'SATA III';
+  }
+  if (iface.toUpperCase().includes('SAS')) {
+    return 'SAS';
+  }
+  if (iface.toUpperCase().includes('NVME') || iface.toUpperCase().includes('NVMe')) {
+    return 'PCIe';
+  }
+  return null;
+};
+
+const parseFormFactor = (ff: string): { main: string; sub: string | null } => {
+  const parts = ff.split(/\s+/);
+  if (parts.length >= 2) {
+    return { main: parts[0], sub: parts.slice(1).join(' ') };
+  }
+  return { main: ff, sub: null };
+};
+
+const isConsumerDrive = (series?: string): boolean => {
+  if (!series) return true;
+  const s = series.toLowerCase();
+  return s.includes('barracuda') || s.includes('desktop') || s.includes('green') || s.includes('blue');
+};
+
+const getSMRNote = (): string =>
+  'SMR 硬盘在持续写入场景下性能可能下降，不适合频繁写入或多盘位 RAID 使用。';
 
 export default function DriveResult({ drives, query, error }: DriveResultProps) {
   const { t } = useLanguage();
@@ -32,41 +118,10 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
       <Card className="p-6 text-center">
         <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('results.notfound.title')}</h3>
-        <p className="text-gray-600">
-          {t('results.notfound.subtitle')}
-        </p>
+        <p className="text-gray-600">{t('results.notfound.subtitle')}</p>
       </Card>
     );
   }
-
-  const getTechnologyColor = (tech: string) => {
-    switch (tech.toUpperCase()) {
-      case 'PMR':
-      case 'CMR':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'SMR':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'HAMR':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getTechnologyLabel = (tech: string) => {
-    switch (tech.toUpperCase()) {
-      case 'PMR':
-        return t('tech.pmr');
-      case 'CMR':
-        return 'CMR';
-      case 'SMR':
-        return t('tech.smr');
-      case 'HAMR':
-        return 'HAMR';
-      default:
-        return tech;
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -75,133 +130,172 @@ export default function DriveResult({ drives, query, error }: DriveResultProps) 
           {t('results.found').replace('{count}', drives.length.toString())}
         </h3>
       </div>
-      
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-        {drives.map((drive, index) => (
-          <Card key={drive.id || `${drive.brand}-${drive.model}-${index}`} className="p-5 hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
-            <div className="space-y-4">
-              {/* Header with Brand and Technology */}
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <HardDriveIcon className="h-8 w-8 text-blue-600 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                      {drive.brand}
-                    </h4>
-                    {drive.series && (
-                      <p className="text-sm text-gray-600 font-medium">
-                        {drive.series}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end space-y-1">
-                  <Badge 
+
+      <div className="grid gap-6">
+        {drives.map((drive, index) => {
+          const isSMR = drive.technology.toUpperCase() === 'SMR';
+          const techLabel = getTechFullLabel(drive.technology);
+          const compat = getCompatibility(drive.technology);
+          const ifaceSub = drive.interface ? getInterfaceSubLabel(drive.interface) : null;
+          const ffParsed = drive.formFactor ? parseFormFactor(drive.formFactor) : null;
+          const consumer = isConsumerDrive(drive.series);
+
+          return (
+            <Card
+              key={drive.id || `${drive.brand}-${drive.model}-${index}`}
+              className="p-6 hover:shadow-lg transition-all duration-200"
+            >
+              <div className="space-y-5">
+                {/* Header: Model + Tech Badge */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h2 className="text-3xl font-bold text-gray-900">{drive.model}</h2>
+                  <Badge
                     variant="outline"
-                    className={getTechnologyColor(drive.technology)}
+                    className={`${getTechBadgeStyle(drive.technology)} text-sm px-3 py-1 font-medium`}
                   >
-                    {getTechnologyLabel(drive.technology)}
+                    {isSMR && <AlertTriangle className="h-4 w-4 mr-1" />}
+                    {techLabel}
                   </Badge>
-                  {(['PMR', 'CMR'].includes(drive.technology.toUpperCase())) && (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  )}
                 </div>
-              </div>
 
-              {/* Model Name */}
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm font-mono text-gray-800 break-all">
-                  {drive.model}
+                {/* Series */}
+                <p className="text-lg text-gray-500">
+                  {drive.brand} {drive.series}
                 </p>
+
+                {/* Divider */}
+                <div className="border-t border-gray-200" />
+
+                {/* Specs Grid — 3 cols x 2 rows */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                  {/* 容量 */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Database className="h-5 w-5" />
+                      <span className="text-sm">容量</span>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-600">{drive.capacity}</p>
+                  </div>
+
+                  {/* 转速 */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Gauge className="h-5 w-5" />
+                      <span className="text-sm">转速</span>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {drive.rpm ?? '-'}{' '}
+                      <span className="text-lg font-normal text-gray-500">RPM</span>
+                    </p>
+                  </div>
+
+                  {/* 缓存 */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Cpu className="h-5 w-5" />
+                      <span className="text-sm">缓存</span>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{drive.cache ?? '-'}</p>
+                  </div>
+
+                  {/* 接口 */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Usb className="h-5 w-5" />
+                      <span className="text-sm">接口</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900">{drive.interface ?? '-'}</p>
+                    {ifaceSub && <p className="text-sm text-gray-400">{ifaceSub}</p>}
+                  </div>
+
+                  {/* 规格 */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Maximize2 className="h-5 w-5" />
+                      <span className="text-sm">规格</span>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{ffParsed?.main ?? '-'}</p>
+                    {ffParsed?.sub && <p className="text-sm text-gray-400">{ffParsed.sub}</p>}
+                  </div>
+
+                  {/* 记录方式 */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Activity className="h-5 w-5" />
+                      <span className="text-sm">记录方式</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-2xl font-bold ${isSMR ? 'text-red-600' : 'text-gray-900'}`}>
+                        {drive.technology}
+                      </span>
+                      <HelpCircle className="h-5 w-5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Usage + Compatibility */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 用途 */}
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Monitor className="h-5 w-5 text-blue-500" />
+                      <span className="text-sm text-gray-600">用途</span>
+                    </div>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {drive.targetUse || drive.notes || '-'}
+                    </p>
+                    <Badge variant="outline" className="mt-2 bg-white text-blue-600 border-blue-200">
+                      {consumer ? '消费级硬盘' : '企业级硬盘'}
+                    </Badge>
+                  </div>
+
+                  {/* 兼容性建议 */}
+                  <div className="bg-amber-50 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-amber-900">兼容性建议</span>
+                      <HelpCircle className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {compat.map((item) => (
+                        <div key={item.label} className="space-y-1">
+                          <p className="text-xs text-gray-600">{item.label}</p>
+                          {item.recommended ? (
+                            <div className="flex items-center justify-center gap-1 text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-xs">推荐</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1 text-red-500">
+                              <X className="h-4 w-4" />
+                              <span className="text-xs">不推荐</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 备注 / SMR 警告 */}
+                {isSMR && (
+                  <div className="bg-gray-50 rounded-xl p-4 flex items-start gap-3">
+                    <Info className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">备注</p>
+                      <p className="text-sm text-gray-600">{getSMRNote()}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="flex justify-between items-center pt-3 border-t border-gray-100 text-sm text-gray-500">
+                  {drive.formFactor && <span>Form Factor: {drive.formFactor}</span>}
+                  {drive.notes && !drive.targetUse && <span>{drive.notes}</span>}
+                </div>
               </div>
-
-              {/* Key Specifications */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center space-x-2">
-                  <Database className="h-4 w-4 text-blue-500" />
-                  <span className="font-semibold text-lg text-blue-600">{drive.capacity}</span>
-                </div>
-                {drive.rpm && (
-                  <div className="flex items-center space-x-2">
-                    <Zap className="h-4 w-4 text-orange-500" />
-                    <span className="text-gray-700">{drive.rpm} RPM</span>
-                  </div>
-                )}
-                {drive.cache && (
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-purple-500" />
-                    <span className="text-gray-700">{drive.cache}</span>
-                  </div>
-                )}
-                {drive.interface && (
-                  <div className="text-gray-600 text-xs">
-                    {drive.interface}
-                  </div>
-                )}
-              </div>
-
-              {/* Target Use */}
-              {(drive.targetUse || drive.notes) && (
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-xs font-semibold text-blue-800 mb-1">
-                    {drive.targetUse ? 'Target Use:' : 'Notes:'}
-                  </p>
-                  <p className="text-sm text-blue-700">{drive.targetUse || drive.notes}</p>
-                </div>
-              )}
-
-              {/* Performance & Additional Info */}
-              {(drive.performance || drive.workloadRating || drive.warranty || drive.price || drive.MTBF) && (
-                <div className="space-y-2 text-xs">
-                  {drive.performance && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Performance:</span>
-                      <span className="text-gray-800 font-medium">{drive.performance}</span>
-                    </div>
-                  )}
-                  {drive.workloadRating && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Workload:</span>
-                      <span className="text-gray-800 font-medium">{drive.workloadRating}</span>
-                    </div>
-                  )}
-                  {drive.warranty && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Warranty:</span>
-                      <span className="text-gray-800 font-medium">{drive.warranty}</span>
-                    </div>
-                  )}
-                  {drive.MTBF && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">MTBF:</span>
-                      <span className="text-gray-800 font-medium">{drive.MTBF}</span>
-                    </div>
-                  )}
-                  {drive.price && (
-                    <div className="flex items-center justify-between">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <span className="text-green-700 font-bold">{drive.price}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Form Factor */}
-              {(drive.formFactor || (drive.targetUse && drive.notes)) && (
-                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                  {drive.formFactor && (
-                    <span className="text-xs text-gray-500">Form Factor: {drive.formFactor}</span>
-                  )}
-                  {drive.targetUse && drive.notes && (
-                    <span className="text-xs text-gray-500 italic max-w-xs truncate" title={drive.notes}>
-                      {drive.notes}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
