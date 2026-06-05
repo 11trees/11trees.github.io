@@ -2,7 +2,7 @@ import { HardDrive } from '@/data/type';
 
 const SEARCH_API_URL =
   import.meta.env.VITE_HARD_DRIVE_SEARCH_API_URL ||
-  'https://hard-drive-type-checker-worker.1996landi.workers.dev/api/search';
+  'https://bbvysveusocxngrt.work:30026/api/search';
 
 interface SearchApiDrive {
   brand: string;
